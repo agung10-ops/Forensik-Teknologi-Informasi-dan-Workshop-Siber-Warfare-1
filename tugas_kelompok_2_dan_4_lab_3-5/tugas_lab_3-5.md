@@ -394,231 +394,61 @@ Mari kita asumsikan kita memulai dari titik di mana kita sudah memiliki *shell* 
 **Format Laporan:**
 
 -----
-Siap 🔥 berikut ini **versi lengkap laporan uji penetrasi jaringan lab `cyberlab-net` dalam format Markdown (.md)** — termasuk **diagram alur metodologi pengujian (flowchart)** dan struktur profesional dari awal sampai akhir.
-
-Kamu bisa langsung **copy-paste ke PyCharm** dan simpan sebagai file bernama:
-📄 `laporan_uji_penetrasi_cyberlabnet.md`
-
----
-
-````markdown
-# 🛡️ LAPORAN UJI PENETRASI: JARINGAN LAB cyberlab-net
-
-**Tanggal Engagement:** [Tanggal Mulai] – [Tanggal Selesai]  
-**Disusun oleh:** [Nama Anda / Kelompok Anda]  
-**Target:** `192.168.100.11`
-
----
-
-## 📘 1. RINGKASAN EKSEKUTIF  
-
-Sebuah uji penetrasi internal dilakukan pada **server target 192.168.100.11** dalam jaringan laboratorium *cyberlab-net*.  
-Tim berhasil memperoleh **akses administratif penuh (root)** ke sistem target dengan mengeksploitasi **kerentanan kritis** pada layanan FTP (VSFTPD versi 2.3.4) yang terekspos.  
-
-Selain itu, ditemukan **kerentanan SQL Injection** pada aplikasi web **DVWA (Damn Vulnerable Web Application)** yang memungkinkan penyerang mengakses seluruh isi basis data tanpa autentikasi.  
-
-Temuan-temuan ini menandakan adanya risiko tinggi terhadap **kerahasiaan, integritas, dan ketersediaan sistem**.  
-Diperlukan **tindakan mitigasi dan patching segera** untuk mencegah potensi kompromi lanjutan.  
-
----
-
-## 🧭 2. RUANG LINGKUP DAN METODOLOGI  
-
-### **Ruang Lingkup:**
-- **Dalam ruang lingkup:** Server target `192.168.100.11`
-- **Di luar ruang lingkup:** IP lain pada subnet `192.168.100.0/24`
-
-### **Tujuan Pengujian:**
-- Mengidentifikasi dan mengevaluasi potensi kerentanan keamanan.  
-- Menilai kemampuan sistem dalam menghadapi serangan umum.  
-- Memberikan rekomendasi mitigasi berdasarkan hasil uji nyata.  
-
-### **Metodologi Pengujian:**
-Uji penetrasi dilakukan berdasarkan pendekatan umum *Penetration Testing Execution Standard (PTES)* yang terdiri dari:
-
-1. **Reconnaissance (Nmap)**  
-   - Identifikasi port dan layanan aktif pada target.  
-
-2. **Vulnerability Analysis**  
-   - Analisis versi layanan untuk mencari potensi celah keamanan.  
-
-3. **Exploitation (Metasploit Framework)**  
-   - Eksploitasi layanan FTP rentan menggunakan modul VSFTPD Backdoor.  
-
-4. **Web Application Testing (Burp Suite / DVWA)**  
-   - Uji kerentanan SQL Injection pada aplikasi web.  
-
----
-
-### **Diagram Alur Uji Penetrasi**
-
-```mermaid
-flowchart TD
-    A[Reconnaissance] --> B[Vulnerability Analysis]
-    B --> C[Exploitation]
-    C --> D[Web Application Testing]
-    D --> E[Reporting & Recommendation]
-
-    A:::phase
-    B:::phase
-    C:::phase
-    D:::phase
-    E:::phase
-
-    classDef phase fill:#0066cc,stroke:#003366,stroke-width:2px,color:#fff;
-````
-
----
-
-## 🧩 3. TEMUAN DAN REKOMENDASI PERBAIKAN
-
----
-
-### ⚠️ 3.1. Temuan #1: Eksekusi Kode Jarak Jauh via Backdoor VSFTPD
-
-**Port Terdampak:** `21/TCP`
-**Layanan:** `vsftpd 2.3.4`
-**Tingkat Risiko:** 🔴 **KRITIS**
-
-#### **Deskripsi:**
-
-Layanan FTP pada server `192.168.100.11` teridentifikasi menjalankan **VSFTPD versi 2.3.4**, versi lama yang diketahui memiliki *backdoor* tersembunyi.
-Kerentanan ini memungkinkan penyerang memperoleh **akses shell root** tanpa autentikasi melalui koneksi FTP sederhana.
-
-#### **Bukti Konsep (Proof of Concept):**
-
-```bash
-msf6 > use exploit/unix/ftp/vsftpd_234_backdoor
-msf6 exploit(vsftpd_234_backdoor) > set RHOSTS 192.168.100.11
-msf6 exploit(vsftpd_234_backdoor) > exploit
-
-[*] Command shell session 1 opened ...
-whoami
-root
-```
-
-#### **Dampak:**
-
-Kompromi total terhadap server. Penyerang dapat:
-
-* Mengambil data sensitif dari sistem.
-* Mengunggah atau menghapus file penting.
-* Meluncurkan serangan lanjutan terhadap sistem lain di jaringan.
-
-#### **Rekomendasi:**
-
-* **Segera nonaktifkan layanan FTP lama.**
-* Hapus instalasi `vsftpd 2.3.4` dan gunakan versi terbaru dari repositori resmi.
-* Terapkan firewall untuk membatasi akses ke port 21 hanya untuk host terpercaya.
-* Audit sistem untuk memastikan tidak ada backdoor atau akses tak sah yang tersisa.
-
----
-
-### ⚠️ 3.2. Temuan #2: SQL Injection pada Halaman Login DVWA
-
-**Aplikasi:** `Damn Vulnerable Web Application (DVWA)`
-**URL:** `http://192.168.100.11/dvwa/vulnerabilities/sqli/`
-**Tingkat Risiko:** 🔴 **KRITIS**
-
-#### **Deskripsi:**
-
-Parameter `id` pada halaman **SQL Injection** DVWA tidak melakukan sanitasi input dengan benar, memungkinkan penyisipan kueri SQL arbitrer oleh penyerang.
-
-#### **Bukti Konsep (Proof of Concept):**
-
-```http
-Request Asli:
-GET /dvwa/vulnerabilities/sqli/?id=1&Submit=Submit
-
-Request Dimodifikasi:
-GET /dvwa/vulnerabilities/sqli/?id=1' OR '1'='1&Submit=Submit
-```
-
-#### **Hasil:**
-
-Server mengembalikan seluruh record pengguna dari basis data, bukan hanya satu.
-
-#### **Dampak:**
-
-Penyerang dapat:
-
-* Membypass autentikasi login.
-* Membaca seluruh isi database, termasuk hash password.
-* Mengubah atau menghapus data penting.
-
-#### **Rekomendasi:**
-
-* Gunakan **Prepared Statements / Parameterized Queries** di sisi server.
-* Terapkan **validasi input** untuk memastikan hanya nilai numerik diterima.
-* Gunakan **Web Application Firewall (WAF)** untuk mendeteksi dan memblokir pola serangan injeksi.
-* Terapkan kebijakan **Least Privilege** untuk user database.
-
----
-
-## 🧠 4. KESIMPULAN
-
-Server target `192.168.100.11` memiliki **postur keamanan yang sangat lemah**, dengan dua kerentanan kritis yang memungkinkan kompromi penuh terhadap sistem.
-
-**Rangkuman Temuan Utama:**
-
-| No | Kerentanan            | Risiko | Dampak                           |
-| -- | --------------------- | ------ | -------------------------------- |
-| 1  | VSFTPD 2.3.4 Backdoor | Kritis | Akses root penuh                 |
-| 2  | SQL Injection (DVWA)  | Kritis | Akses database tanpa autentikasi |
-
-### **Rekomendasi Umum:**
-
-* Lakukan **isolasi sistem** untuk mencegah penyebaran serangan.
-* **Hapus atau perbarui layanan rentan.**
-* Terapkan kebijakan **patch management** rutin.
-* Lakukan **uji penetrasi ulang (retest)** setelah mitigasi diterapkan.
-
----
-
-## 🧾 5. LAMPIRAN
-
-### **5.1. Hasil Pemindaian Nmap**
-
-```bash
-# nmap -sS -sV 192.168.100.11
-
-PORT     STATE SERVICE VERSION
-21/tcp   open  ftp      vsftpd 2.3.4
-22/tcp   open  ssh      OpenSSH 4.7p1 Debian 8ubuntu1
-80/tcp   open  http     Apache httpd 2.2.8 ((Ubuntu) DAV/2)
-```
-
-### **5.2. Bukti Eksploitasi (Metasploit)**
-
-```bash
-msf6 exploit(unix/ftp/vsftpd_234_backdoor) > exploit
-[*] Command shell session 1 opened (192.168.100.11:21 -> 192.168.100.10:4444)
-whoami
-root
-```
-
-### **5.3. Bukti SQL Injection (Burp Suite)**
-
-```sql
-Input: 1' OR '1'='1 --
-Output: Semua data pengguna ditampilkan
-```
-
----
-
-## ⚙️ 6. PENUTUP
-
-Laporan ini disusun sebagai bagian dari **simulasi laboratorium keamanan siber** untuk keperluan **pembelajaran, riset, dan tugas akademik**.
-Seluruh aktivitas dilakukan di lingkungan **terkendali** dan **tidak ditujukan untuk sistem produksi atau publik**.
-
----
-
-✍️ **Disusun oleh:**
-[Sertu Agung, Sertu Marthen, Sertu Putra, Sertu Bana, Praka Cayanto, Praka Alvyan]
-
-**Prodi :** Teknik Indormatika (Cyber) Angkatan XIX 
+**LAPORAN UJI PENETRASI: JARINGAN LAB `cyberlab-net`**
+
+**Tanggal Engagement:** 30 Oktober 2025 s/d 4 November 2025
+**Disusun oleh:** 
+1. Agung Kurniawan
+2. Marthen Frikaldo
+3. Bana Ridho
+4. Putra Rizki
+5. Nur Cayanto
+6. Alfiyan
 
 -----
+
+**1. RINGKASAN EKSEKUTIF**
+*(Ditujukan untuk manajemen. Hindari jargon teknis. Fokus pada risiko bisnis.)*
+"Sebuah uji penetrasi internal dilakukan pada server target `192.168.100.11`. Tim berhasil mendapatkan **akses administratif penuh (root)** ke server ini dengan mengeksploitasi kerentanan kritis pada layanan FTP yang terekspos. Lebih lanjut, analisis terhadap aplikasi web yang di-host di server tersebut mengungkapkan kerentanan **SQL Injection** tingkat kritis, yang memungkinkan penyerang untuk membaca seluruh basis data pengguna. Temuan ini menunjukkan risiko tinggi terhadap kerahasiaan, integritas, dan ketersediaan data. Diperlukan tindakan perbaikan segera."
+
+**2. RUANG LINGKUP DAN METODOLOGI**
+
+  * **Ruang Lingkup**: Target yang diuji adalah `192.168.100.11`. Target di luar ruang lingkup adalah `192.168.100.100`.
+  * **Metodologi**: Uji penetrasi mengikuti fase-fase berikut: Reconnaissance (Nmap), Vulnerability Analysis, Exploitation (Metasploit), dan Web Application Testing (Burp Suite).
+
+**3. TEMUAN DAN REKOMENDASI PERBAIKAN**
+*(Ini adalah bagian inti. Buat satu sub-bagian untuk setiap kerentanan yang ditemukan).*
+
+**3.1. Temuan \#1: Eksekusi Kode Jarak Jauh via Backdoor VSFTPD**
+
+  * **Tingkat Risiko**: **KRITIS**
+  * **Deskripsi**: Layanan FTP yang berjalan di port 21/TCP teridentifikasi sebagai VSFTPD versi 2.3.4. Versi spesifik ini mengandung *backdoor* yang disengaja yang memungkinkan penyerang untuk mendapatkan *shell* dengan hak akses root tanpa otentikasi.
+  * **Bukti Konsep (Proof of Concept)**:
+    ```
+    msf6 > use exploit/unix/ftp/vsftpd_234_backdoor
+    msf6 exploit(...) > set RHOSTS 192.168.100.11
+    msf6 exploit(...) > exploit
+    [*] Command shell session 1 opened ...
+    whoami
+    root
+    ```
+  * **Dampak**: Kompromi total terhadap server, memungkinkan penyerang untuk mencuri data, menginstal *malware*, atau menggunakannya sebagai titik lompat untuk menyerang sistem lain.
+  * **Rekomendasi**: Segera nonaktifkan dan hapus layanan VSFTPD yang rentan ini. Jika layanan FTP diperlukan, instal versi modern yang telah di-*patch* dari repositori resmi distribusi Linux.
+
+**3.2. Temuan \#2: SQL Injection pada Halaman Login DVWA**
+
+  * **Tingkat Risiko**: **KRITIS**
+  * **Deskripsi**: Parameter `id` pada halaman SQL Injection di aplikasi web DVWA tidak melakukan validasi atau sanitasi input pengguna dengan benar. Hal ini memungkinkan penyerang untuk menyuntikkan kueri SQL arbitrer.
+  * **Bukti Konsep (Proof of Concept)**:
+      * Request Asli: `GET /dvwa/vulnerabilities/sqli/?id=1&Submit=Submit`
+      * Request yang Dimodifikasi: `GET /dvwa/vulnerabilities/sqli/?id=1' OR '1'='1&Submit=Submit`
+      * Hasil: Server mengembalikan semua record dari tabel pengguna, bukan hanya satu.
+  * **Dampak**: Penyerang dapat membypass otentikasi, membaca semua data sensitif dari basis data (termasuk *hash* password pengguna), memodifikasi, atau menghapus data.
+  * **Rekomendasi**: Terapkan *Prepared Statements* (Parameterized Queries) pada kode aplikasi untuk memisahkan data dari kueri SQL. Lakukan juga validasi input di sisi server untuk memastikan hanya tipe data yang diharapkan (dalam hal ini, integer) yang diterima.
+
+**4. KESIMPULAN**
+Server target `192.168.100.11` memiliki postur keamanan yang sangat lemah dan rentan terhadap kompromi penuh melalui beberapa vektor. Direkomendasikan agar server ini segera diisolasi dari jaringan produksi (jika ada) dan semua kerentanan kritis yang teridentifikasi segera diperbaiki.
+
 
 ### **H. SUMBER PEMBELAJARAN**
 
