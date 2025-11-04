@@ -393,19 +393,18 @@ Mari kita asumsikan kita memulai dari titik di mana kita sudah memiliki *shell* 
 
 **Format Laporan:**
 
------
-Siap 🔥 berikut ini **versi lengkap laporan uji penetrasi jaringan lab `cyberlab-net` dalam format Markdown (.md)** — termasuk **diagram alur metodologi pengujian (flowchart)** dan struktur profesional dari awal sampai akhir.
-
-Kamu bisa langsung **copy-paste ke PyCharm** dan simpan sebagai file bernama:
-📄 `laporan_uji_penetrasi_cyberlabnet.md`
-
----
-
-````markdown
 # 🛡️ LAPORAN UJI PENETRASI: JARINGAN LAB cyberlab-net
 
-**Tanggal Engagement:** [Tanggal Mulai] – [Tanggal Selesai]  
-**Disusun oleh:** [Nama Anda / Kelompok Anda]  
+**Tanggal Engagement:** 30-10-2025 s/d 04-11-2025
+**Disusun oleh:** 
+1. Agung Kurniawan
+2. Marthen Frikaldo
+3. Bana Ridho
+4. Putra Rizki
+5. Nur Cayanto
+6. Alfiyan
+
+   
 **Target:** `192.168.100.11`
 
 ---
